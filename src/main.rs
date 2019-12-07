@@ -3,6 +3,7 @@ use std::io;
 
 mod one;
 mod two;
+mod three;
 
 fn main() {
     let args: Vec<_> = args().collect();
@@ -14,6 +15,7 @@ fn main() {
             "1b" => println!("{}", one::one_b(buf)),
             "2a" => println!("{}", two::two_a(buf)),
             "2b" => println!("{:?}", two::two_b(buf)),
+            "3a" => println!("{}", three::three_a(buf)),
             _ => println!("argument unrecognized: {}", args[1]),
         }
     }

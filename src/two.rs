@@ -77,15 +77,9 @@ where
     let mut noun: usize = 0;
     let mut out: usize;
     let needle: usize = 19690720;
-    loop {
-        if noun == 100 {
-            break;
-        }
+    while noun < 100 {
         let mut verb: usize = 0;
-        'inner: loop {
-            if verb == 100 {
-                break 'inner;
-            }
+        while verb < 100 {
             let mut mach = IntcodeMachine {
                 ip: 0,
                 program: p.to_owned(),
@@ -110,7 +104,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_incode_machine() {
+    fn test_intcode_machine() {
         let test_program: Vec<usize> = [1,9,10,3,2,3,11,0,99,30,40,50].to_vec();
 
         let mut mach = IntcodeMachine {

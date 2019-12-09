@@ -1,42 +1,9 @@
+#[path = "intcode.rs"]
+mod intcode;
+
 use std::io::BufRead;
+use intcode::IntcodeMachine;
 
-struct IntcodeMachine {
-    ip: usize,
-    program: Vec<usize>,
-}
-
-impl IntcodeMachine {
-    pub fn run_program(&mut self) -> usize {
-        self.ip = 0;
-        loop {
-            match self.program[self.ip] {
-                1 => self.add(),
-                2 => self.multiply(),
-                99 => break,
-                _ => panic!("bad input"),
-            }
-        }
-        self.program[0]
-    }
-
-    pub fn add(&mut self) {
-        let s = self.deref(self.ip + 1) + self.deref(self.ip + 2);
-        let res_addr = self.program[self.ip + 3];
-        self.program[res_addr] = s;
-        self.ip += 4;
-    }
-
-    pub fn multiply(&mut self) {
-        let p = self.deref(self.ip + 1) * self.deref(self.ip + 2);
-        let res_addr = self.program[self.ip + 3];
-        self.program[res_addr] = p;
-        self.ip += 4;
-    }
-
-    fn deref(&mut self, addr: usize) -> usize {
-        self.program[self.program[addr]]
-    }
-}
 
 fn read_program<I>(mut buf: I) -> Vec<usize>
 where
@@ -56,15 +23,11 @@ where
     I: BufRead,
 {
 
-    let p = read_program(buf);
-    let mut mach = IntcodeMachine {
-        ip: 0,
-        program: p,
-    };
+    let mut p = read_program(buf);
+    p[1] = 12;
+    p[2] = 2;
 
-    mach.program[1] = 12;
-    mach.program[2] = 2;
-
+    let mut mach = IntcodeMachine::new(p);
     mach.run_program()
 }
 
@@ -80,12 +43,10 @@ where
     while noun < 100 {
         let mut verb: usize = 0;
         while verb < 100 {
-            let mut mach = IntcodeMachine {
-                ip: 0,
-                program: p.to_owned(),
-            };
-            mach.program[1] = noun;
-            mach.program[2] = verb;
+            let mut q = p.to_owned();
+            q[1] = noun;
+            q[2] = verb;
+            let mut mach = IntcodeMachine::new(q);
             out = mach.run_program();
 
             if needle == out {
@@ -97,20 +58,4 @@ where
     }
 
     panic!("no input yields value 19690720");
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_intcode_machine() {
-        let test_program: Vec<usize> = [1,9,10,3,2,3,11,0,99,30,40,50].to_vec();
-
-        let mut mach = IntcodeMachine {
-            ip: 0,
-            program: test_program,
-        };
-        assert_eq!(3500, mach.run_program());
-    }
 }

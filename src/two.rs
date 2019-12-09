@@ -5,7 +5,7 @@ use std::io::BufRead;
 use intcode::IntcodeMachine;
 
 
-fn read_program<I>(mut buf: I) -> Vec<usize>
+fn read_program<I>(mut buf: I) -> Vec<i32>
 where
     I: BufRead,
 {
@@ -18,7 +18,7 @@ where
         .collect()
 }
 
-pub fn two_a<I>(buf: I) -> usize
+pub fn two_a<I>(buf: I) -> i32
 where
     I: BufRead,
 {
@@ -31,17 +31,17 @@ where
     mach.run_program()
 }
 
-pub fn two_b<I>(buf: I) -> usize
+pub fn two_b<I>(buf: I) -> i32
 where
     I: BufRead,
 {
 
     let p = read_program(buf);
-    let mut noun: usize = 0;
-    let mut out: usize;
-    let needle: usize = 19690720;
+    let mut noun: i32 = 0;
+    let mut out: i32;
+    let needle: i32 = 19690720;
     while noun < 100 {
-        let mut verb: usize = 0;
+        let mut verb: i32 = 0;
         while verb < 100 {
             let mut q = p.to_owned();
             q[1] = noun;

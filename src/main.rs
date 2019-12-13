@@ -5,6 +5,7 @@ mod one;
 mod two;
 mod three;
 mod four;
+mod five;
 
 fn main() {
     let args: Vec<_> = args().collect();
@@ -20,6 +21,7 @@ fn main() {
             "3b" => println!("{}", three::three_b(buf)),
             "4a" => println!("{}", four::four_a(buf)),
             "4b" => println!("{}", four::four_b(buf)),
+            "5a" => println!("{}", five::five_a(buf)),
             _ => println!("argument unrecognized: {}", args[1]),
         }
     }

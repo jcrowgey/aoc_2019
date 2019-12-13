@@ -5,25 +5,12 @@ use std::io::BufRead;
 use intcode::IntcodeMachine;
 
 
-fn read_program<I>(mut buf: I) -> Vec<i32>
-where
-    I: BufRead,
-{
-    let mut line = String::new();
-    buf.read_line(&mut line).unwrap();
-    line.trim()
-        .split(",")
-        .into_iter()
-        .map(|x| x.parse().expect("error parsing number"))
-        .collect()
-}
-
 pub fn two_a<I>(buf: I) -> i32
 where
     I: BufRead,
 {
 
-    let mut p = read_program(buf);
+    let mut p = intcode::read_program(buf);
     p[1] = 12;
     p[2] = 2;
 
@@ -36,7 +23,7 @@ where
     I: BufRead,
 {
 
-    let p = read_program(buf);
+    let p = intcode::read_program(buf);
     let mut noun: i32 = 0;
     let mut out: i32;
     let needle: i32 = 19690720;

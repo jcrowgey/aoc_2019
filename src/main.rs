@@ -22,6 +22,7 @@ fn main() {
             "4a" => println!("{}", four::four_a(buf)),
             "4b" => println!("{}", four::four_b(buf)),
             "5a" => println!("{}", five::five_a(buf)),
+            "5b" => println!("{}", five::five_b(buf)),
             _ => println!("argument unrecognized: {}", args[1]),
         }
     }

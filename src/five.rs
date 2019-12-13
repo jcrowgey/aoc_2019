@@ -19,3 +19,20 @@ where
     }
     out_vec[out_vec.len()-1]
 }
+
+
+pub fn five_b<I>(buf: I) -> i32
+where
+    I: BufRead,
+{
+    let p = intcode::read_program(buf);
+    let mut mach = IntcodeMachine::new(p);
+    mach.input(5);
+    let _ret = mach.run_program();
+    let mut out_vec = Vec::new();
+
+    while let Some(i) = mach.output() {
+        out_vec.push(i);
+    }
+    out_vec[out_vec.len()-1]
+}

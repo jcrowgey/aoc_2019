@@ -109,20 +109,45 @@ impl IntcodeMachine {
     }
 
 
-    fn jit(&mut self, mut mode: Vec<bool>) {
-        unimplemented!();
+    fn jit(&mut self, mode: Vec<bool>) {
+        let params = self.eval_params(mode, 2);
+        if params[0] != 0 {
+            self.ip = self.addr(params[1]);
+        } else {
+            self.ip += 3;
+        }
+
     }
 
-    fn jif(&mut self, mut mode: Vec<bool>) {
-        unimplemented!();
+    fn jif(&mut self, mode: Vec<bool>) {
+        let params = self.eval_params(mode, 2);
+        if params[0] == 0 {
+            self.ip = self.addr(params[1]);
+        } else {
+            self.ip += 3;
+        }
     }
 
-    fn lt(&mut self, mut mode: Vec<bool>) {
-        unimplemented!();
+    fn lt(&mut self, mode: Vec<bool>) {
+        let params = self.eval_params(mode, 2);
+        let res_addr = self.addr(self.memory[self.ip + 3]);
+        if params[0] < params[1] {
+            self.memory[res_addr] = 1;
+        } else {
+            self.memory[res_addr] = 0;
+        }
+        self.ip += 4;
     }
 
-    fn eq(&mut self, mut mode: Vec<bool>) {
-        unimplemented!();
+    fn eq(&mut self, mode: Vec<bool>) {
+        let params = self.eval_params(mode, 2);
+        let res_addr = self.addr(self.memory[self.ip + 3]);
+        if params[0] == params[1] {
+            self.memory[res_addr] = 1;
+        } else {
+            self.memory[res_addr] = 0;
+        }
+        self.ip += 4;
     }
 
     // Internal helpers 
@@ -153,7 +178,7 @@ impl IntcodeMachine {
                 p = self.deref(self.ip + i + 1);
             }
             i += 1;
-            ret.push_front(p);
+            ret.push_back(p);
         }
         ret
     }
@@ -181,5 +206,103 @@ mod tests {
             memory: [1002].to_vec(),
         };
         assert_eq!(mach.parse_instruction(), ([false, true, false].to_vec(), 2));
+    }
+
+    #[test]
+    fn test_eq() {
+        let eq_8_ptr: Vec<i32> = [3,9,8,9,10,9,4,9,99,-1,8].to_vec();
+        let mut mach = IntcodeMachine::new(eq_8_ptr.to_owned());
+        mach.input(7);
+        mach.run_program();
+        assert_eq!(0, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(eq_8_ptr.to_owned());
+        mach.input(8);
+        mach.run_program();
+        assert_eq!(1, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(eq_8_ptr);
+        mach.input(9);
+        mach.run_program();
+        assert_eq!(0, mach.output().unwrap());
+
+        let eq_8_val: Vec<i32> = [3,3,1108,-1,8,3,4,3,99].to_vec();
+        let mut mach = IntcodeMachine::new(eq_8_val.to_owned());
+        mach.input(7);
+        mach.run_program();
+        assert_eq!(0, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(eq_8_val.to_owned());
+        mach.input(8);
+        mach.run_program();
+        assert_eq!(1, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(eq_8_val);
+        mach.input(9);
+        mach.run_program();
+        assert_eq!(0, mach.output().unwrap());
+    }
+
+
+    #[test]
+    fn test_lt_instruction() {
+        let lt_8_ptr: Vec<i32> = [3,9,7,9,10,9,4,9,99,-1,8].to_vec();
+        let mut mach = IntcodeMachine::new(lt_8_ptr.to_owned());
+        mach.input(7);
+        mach.run_program();
+        assert_eq!(1, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(lt_8_ptr.to_owned());
+        mach.input(8);
+        mach.run_program();
+        assert_eq!(0, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(lt_8_ptr.to_owned());
+        mach.input(9);
+        mach.run_program();
+        assert_eq!(0, mach.output().unwrap());
+
+        let lt_8_val: Vec<i32> = [3,3,1107,-1,8,3,4,3,99].to_vec();
+        let mut mach = IntcodeMachine::new(lt_8_val.to_owned());
+        mach.input(7);
+        mach.run_program();
+        assert_eq!(1, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(lt_8_val.to_owned());
+        mach.input(8);
+        mach.run_program();
+        assert_eq!(0, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(lt_8_val.to_owned());
+        mach.input(9);
+        mach.run_program();
+        assert_eq!(0, mach.output().unwrap());
+    }
+
+
+    #[test]
+    fn test_jmp() {
+        let not_zero_ptr: Vec<i32> = [3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9].to_vec();
+        let not_zero_val: Vec<i32> = [3,3,1105,-1,9,1101,0,0,12,4,12,99,1].to_vec();
+
+        let mut mach = IntcodeMachine::new(not_zero_ptr.to_owned());
+        mach.input(0);
+        mach.run_program();
+        assert_eq!(0, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(not_zero_ptr.to_owned());
+        mach.input(-11);
+        mach.run_program();
+        assert_eq!(1, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(not_zero_val.to_owned());
+        mach.input(0);
+        mach.run_program();
+        assert_eq!(0, mach.output().unwrap());
+
+        let mut mach = IntcodeMachine::new(not_zero_val.to_owned());
+        mach.input(-1);
+        mach.run_program();
+        assert_eq!(1, mach.output().unwrap());
     }
 }

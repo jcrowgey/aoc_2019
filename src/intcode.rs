@@ -49,6 +49,10 @@ impl IntcodeMachine {
                 2 => self.mul(mode),
                 3 => self.inp(mode),
                 4 => self.out(mode),
+                5 => self.jit(mode),
+                6 => self.jif(mode),
+                7 => self.lt(mode),
+                8 => self.eq(mode),
                 99 => break,
                 _ => panic!("bad input"),
             }
@@ -74,39 +78,20 @@ impl IntcodeMachine {
         (mode, opcode)
     }
 
-    fn add(&mut self, mut mode: Vec<bool>) {
-        let mut p1: i32 = self.memory[self.ip + 1];
-        let mut p2: i32 = self.memory[self.ip + 2];
-        let mut m: bool = mode.pop().expect("mode too short");
-        if !m {
-            p1 = self.deref(self.ip + 1);
-        }
-
-        m = mode.pop().expect("mode too short");
-        if !m {
-            p2 = self.deref(self.ip + 2);
-        }
-
-        let s = p1 + p2;
+    // Instruction implementations:
+    fn add(&mut self, mode: Vec<bool>) {
+        let params = self.eval_params(mode, 2);
+        let sum = params[0] + params[1];
         let res_addr = self.addr(self.memory[self.ip + 3]);
-        self.memory[res_addr] = s;
+        self.memory[res_addr] = sum;
         self.ip += 4;
     }
 
-    fn mul(&mut self, mut mode: Vec<bool>) {
-        let mut p1: i32 = self.memory[self.ip + 1];
-        let mut p2: i32 = self.memory[self.ip + 2];
-        let mut m: bool = mode.pop().expect("mode too short");
-        if !m {
-            p1 = self.deref(self.ip + 1);
-        }
-        m = mode.pop().expect("mode too short");
-        if !m {
-            p2 = self.deref(self.ip + 2);
-        }
-        let p = p1 * p2;
+    fn mul(&mut self, mode: Vec<bool>) {
+        let params = self.eval_params(mode, 2);
+        let prod = params[0] * params[1];
         let res_addr = self.addr(self.memory[self.ip + 3]);
-        self.memory[res_addr] = p;
+        self.memory[res_addr] = prod;
         self.ip += 4;
     }
 
@@ -117,16 +102,30 @@ impl IntcodeMachine {
         self.ip += 2;
     }
 
-    fn out(&mut self, mut mode: Vec<bool>) {
-        let mut out: i32 = self.memory[self.ip + 1];
-        let m: bool = mode.pop().expect("mode too short");
-        if !m {
-            out = self.deref(self.ip + 1);
-        }
-        self.write_output(out);
+    fn out(&mut self, mode: Vec<bool>) {
+        let out = self.eval_params(mode, 1);
+        self.write_output(out[0]);
         self.ip += 2;
     }
 
+
+    fn jit(&mut self, mut mode: Vec<bool>) {
+        unimplemented!();
+    }
+
+    fn jif(&mut self, mut mode: Vec<bool>) {
+        unimplemented!();
+    }
+
+    fn lt(&mut self, mut mode: Vec<bool>) {
+        unimplemented!();
+    }
+
+    fn eq(&mut self, mut mode: Vec<bool>) {
+        unimplemented!();
+    }
+
+    // Internal helpers 
     fn deref(&mut self, addr: usize) -> i32 {
         self.memory[self.memory[addr] as usize]
     }
@@ -141,6 +140,22 @@ impl IntcodeMachine {
 
     fn write_output(&mut self, out: i32) {
         self.out_buf.push_front(out);
+    }
+
+    // returns a Vec of n values
+    fn eval_params(&mut self, mut mode: Vec<bool>, n: usize) -> VecDeque<i32> {
+        let mut ret = VecDeque::new();
+        let mut i = 0;
+        while n > i {
+            let mut p: i32 = self.memory[self.ip + i + 1];
+            let m: bool = mode.pop().expect("mode too short");
+            if !m {
+                p = self.deref(self.ip + i + 1);
+            }
+            i += 1;
+            ret.push_front(p);
+        }
+        ret
     }
 
 }
@@ -161,8 +176,8 @@ mod tests {
     fn test_parse_instruction() {
         let mut mach = IntcodeMachine {
             ip: 0,
-            input: Vec::new(),
-            output: Vec::new(),
+            in_buf: VecDeque::new(),
+            out_buf: VecDeque::new(),
             memory: [1002].to_vec(),
         };
         assert_eq!(mach.parse_instruction(), ([false, true, false].to_vec(), 2));

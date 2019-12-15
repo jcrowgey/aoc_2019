@@ -14,7 +14,7 @@ where
     p[1] = 12;
     p[2] = 2;
 
-    let mut mach = IntcodeMachine::new(p);
+    let (_m_in, _m_out, mut mach) = IntcodeMachine::new(p);
     mach.run_program()
 }
 
@@ -33,7 +33,7 @@ where
             let mut q = p.to_owned();
             q[1] = noun;
             q[2] = verb;
-            let mut mach = IntcodeMachine::new(q);
+            let (_m_in, _m_out, mut mach) = IntcodeMachine::new(q);
             out = mach.run_program();
 
             if needle == out {

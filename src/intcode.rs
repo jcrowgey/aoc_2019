@@ -1,5 +1,6 @@
 use std::io::BufRead;
 use std::collections::VecDeque;
+use std::sync::mpsc::{channel, Sender, Receiver};
 
 pub fn read_program<I>(mut buf: I) -> Vec<i32>
 where
@@ -17,27 +18,22 @@ where
 
 pub struct IntcodeMachine {
     ip: usize,
-    out_buf: VecDeque<i32>,
-    in_buf: VecDeque<i32>,
+    out_tx: Sender<i32>,
+    in_rx: Receiver<i32>,
     memory: Vec<i32>,
 }
 
 impl IntcodeMachine {
-    pub fn new(program: Vec<i32>) -> IntcodeMachine {
-        IntcodeMachine {
+    pub fn new(program: Vec<i32>) -> (Sender<i32>, Receiver<i32>, IntcodeMachine) {
+        let (itx, irx) = channel::<i32>();
+        let (otx, orx) = channel::<i32>();
+        let mach = IntcodeMachine {
             ip: 0,
-            in_buf: VecDeque::new(),
-            out_buf: VecDeque::new(),
+            in_rx: irx,
+            out_tx: otx,
             memory: program,
-        }
-    }
-
-    pub fn input(&mut self, v: i32) {
-        self.in_buf.push_front(v);
-    }
-
-    pub fn output(&mut self) -> Option<i32> {
-        self.out_buf.pop_back()
+        };
+        (itx, orx, mach)
     }
 
     pub fn run_program(&mut self) -> i32 {
@@ -160,11 +156,11 @@ impl IntcodeMachine {
     }
 
     fn read_input(&mut self) -> i32 {
-        self.in_buf.pop_back().expect("i should block instead of panic")
+        self.in_rx.recv().unwrap()
     }
 
     fn write_output(&mut self, out: i32) {
-        self.out_buf.push_front(out);
+        self.out_tx.send(out).expect("unable to send output");
     }
 
     // returns a Vec of n values
@@ -193,90 +189,98 @@ mod tests {
     fn test_intcode_machine_add_mul() {
         let test_program: Vec<i32> = [1,9,10,3,2,3,11,0,99,30,40,50].to_vec();
 
-        let mut mach = IntcodeMachine::new(test_program);
+        let (_m_in, _m_out, mut mach) = IntcodeMachine::new(test_program);
         assert_eq!(3500, mach.run_program());
-    }
-
-    #[test]
-    fn test_parse_instruction() {
-        let mut mach = IntcodeMachine {
-            ip: 0,
-            in_buf: VecDeque::new(),
-            out_buf: VecDeque::new(),
-            memory: [1002].to_vec(),
-        };
-        assert_eq!(mach.parse_instruction(), ([false, true, false].to_vec(), 2));
     }
 
     #[test]
     fn test_eq() {
         let eq_8_ptr: Vec<i32> = [3,9,8,9,10,9,4,9,99,-1,8].to_vec();
-        let mut mach = IntcodeMachine::new(eq_8_ptr.to_owned());
-        mach.input(7);
-        mach.run_program();
-        assert_eq!(0, mach.output().unwrap());
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(eq_8_ptr.to_owned());
+        let computation = thread::spawn(move || {
+            mach.run_program()
+        });
+        m_in.send(7).expect("failed to send");
+        let _exit_code = computation.join().unwrap();
+        assert_eq!(0, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(eq_8_ptr.to_owned());
-        mach.input(8);
-        mach.run_program();
-        assert_eq!(1, mach.output().unwrap());
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(eq_8_ptr.to_owned());
+        let computation = thread::spawn(move || {
+            mach.run_program()
+        });
+        m_in.send(8).expect("failed to send");
+        let _exit_code = computation.join().unwrap();
+        assert_eq!(1, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(eq_8_ptr);
-        mach.input(9);
-        mach.run_program();
-        assert_eq!(0, mach.output().unwrap());
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(eq_8_ptr.to_owned());
+        let computation = thread::spawn(move || {
+            mach.run_program()
+        });
+        m_in.send(9).expect("failed to send");
+        let _exit_code = computation.join().unwrap();
+        assert_eq!(0, m_out.recv().unwrap());
+
 
         let eq_8_val: Vec<i32> = [3,3,1108,-1,8,3,4,3,99].to_vec();
-        let mut mach = IntcodeMachine::new(eq_8_val.to_owned());
-        mach.input(7);
-        mach.run_program();
-        assert_eq!(0, mach.output().unwrap());
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(eq_8_val.to_owned());
+        let computation = thread::spawn(move || {
+            mach.run_program()
+        });
+        m_in.send(7).expect("failed to send");
+        let _exit_code = computation.join().unwrap();
+        assert_eq!(0, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(eq_8_val.to_owned());
-        mach.input(8);
-        mach.run_program();
-        assert_eq!(1, mach.output().unwrap());
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(eq_8_val.to_owned());
+        let computation = thread::spawn(move || {
+            mach.run_program()
+        });
+        m_in.send(8).expect("failed to send");
+        let _exit_code = computation.join().unwrap();
+        assert_eq!(1, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(eq_8_val);
-        mach.input(9);
-        mach.run_program();
-        assert_eq!(0, mach.output().unwrap());
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(eq_8_val);
+        let computation = thread::spawn(move || {
+            mach.run_program()
+        });
+        m_in.send(9).expect("failed to send");
+        let _exit_code = computation.join().unwrap();
+        assert_eq!(0, m_out.recv().unwrap());
     }
 
 
     #[test]
     fn test_lt_instruction() {
         let lt_8_ptr: Vec<i32> = [3,9,7,9,10,9,4,9,99,-1,8].to_vec();
-        let mut mach = IntcodeMachine::new(lt_8_ptr.to_owned());
-        mach.input(7);
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(lt_8_ptr.to_owned());
+        m_in.send(7).expect("failed to send");
         mach.run_program();
-        assert_eq!(1, mach.output().unwrap());
+        assert_eq!(1, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(lt_8_ptr.to_owned());
-        mach.input(8);
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(lt_8_ptr.to_owned());
+        m_in.send(8).expect("failed to send");
         mach.run_program();
-        assert_eq!(0, mach.output().unwrap());
+        assert_eq!(0, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(lt_8_ptr.to_owned());
-        mach.input(9);
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(lt_8_ptr.to_owned());
+        m_in.send(9).expect("failed to send");
         mach.run_program();
-        assert_eq!(0, mach.output().unwrap());
+        assert_eq!(0, m_out.recv().unwrap());
 
         let lt_8_val: Vec<i32> = [3,3,1107,-1,8,3,4,3,99].to_vec();
-        let mut mach = IntcodeMachine::new(lt_8_val.to_owned());
-        mach.input(7);
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(lt_8_val.to_owned());
+        m_in.send(7).expect("failed to send");
         mach.run_program();
-        assert_eq!(1, mach.output().unwrap());
+        assert_eq!(1, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(lt_8_val.to_owned());
-        mach.input(8);
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(lt_8_val.to_owned());
+        m_in.send(8).expect("failed to send");
         mach.run_program();
-        assert_eq!(0, mach.output().unwrap());
+        assert_eq!(0, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(lt_8_val.to_owned());
-        mach.input(9);
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(lt_8_val.to_owned());
+        m_in.send(9).expect("failed to send");
         mach.run_program();
-        assert_eq!(0, mach.output().unwrap());
+        assert_eq!(0, m_out.recv().unwrap());
     }
 
 
@@ -285,24 +289,25 @@ mod tests {
         let not_zero_ptr: Vec<i32> = [3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9].to_vec();
         let not_zero_val: Vec<i32> = [3,3,1105,-1,9,1101,0,0,12,4,12,99,1].to_vec();
 
-        let mut mach = IntcodeMachine::new(not_zero_ptr.to_owned());
-        mach.input(0);
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(not_zero_ptr.to_owned());
+        m_in.send(0).expect("failed to send");
         mach.run_program();
-        assert_eq!(0, mach.output().unwrap());
+        assert_eq!(0, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(not_zero_ptr.to_owned());
-        mach.input(-11);
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(not_zero_ptr.to_owned());
+        m_in.send(-11).expect("failed to send");
         mach.run_program();
-        assert_eq!(1, mach.output().unwrap());
+        assert_eq!(1, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(not_zero_val.to_owned());
-        mach.input(0);
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(not_zero_val.to_owned());
+        m_in.send(0).expect("failed to send");
         mach.run_program();
-        assert_eq!(0, mach.output().unwrap());
+        assert_eq!(0, m_out.recv().unwrap());
 
-        let mut mach = IntcodeMachine::new(not_zero_val.to_owned());
-        mach.input(-1);
+        let (m_in, m_out, mut mach) = IntcodeMachine::new(not_zero_val.to_owned());
+        m_in.send(-1).expect("failed to send");
         mach.run_program();
-        assert_eq!(1, mach.output().unwrap());
+        assert_eq!(1, m_out.recv().unwrap());
     }
+
 }

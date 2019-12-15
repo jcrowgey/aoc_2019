@@ -2,6 +2,7 @@
 mod intcode;
 
 use std::io::BufRead;
+use std::thread;
 use intcode::IntcodeMachine;
 
 pub fn five_a<I>(buf: I) -> i32
@@ -9,12 +10,15 @@ where
     I: BufRead,
 {
     let p = intcode::read_program(buf);
-    let mut mach = IntcodeMachine::new(p);
-    mach.input(1);
-    let _ret = mach.run_program();
-    let mut out_vec = Vec::new();
+    let (mach_in, mach_out, mut mach) = IntcodeMachine::new(p);
 
-    while let Some(i) = mach.output() {
+    mach_in.send(1).unwrap();
+    let _exit_code = thread::spawn(move || {
+        mach.run_program()
+    });
+
+    let mut out_vec = Vec::new();
+    for i in mach_out {
         out_vec.push(i);
     }
     out_vec[out_vec.len()-1]
@@ -26,12 +30,14 @@ where
     I: BufRead,
 {
     let p = intcode::read_program(buf);
-    let mut mach = IntcodeMachine::new(p);
-    mach.input(5);
-    let _ret = mach.run_program();
-    let mut out_vec = Vec::new();
+    let (mach_in, mach_out, mut mach) = IntcodeMachine::new(p);
+    mach_in.send(5).unwrap();
+    let _exit_code = thread::spawn(move || {
+        mach.run_program()
+    });
 
-    while let Some(i) = mach.output() {
+    let mut out_vec = Vec::new();
+    for i in mach_out {
         out_vec.push(i);
     }
     out_vec[out_vec.len()-1]

@@ -184,6 +184,7 @@ impl IntcodeMachine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::thread;
 
     #[test]
     fn test_intcode_machine_add_mul() {

@@ -31,6 +31,10 @@ fn main() {
             "7a" => println!("{}", seven::seven_a(buf)),
             "7b" => println!("{}", seven::seven_b(buf)),
             "8a" => println!("{}", eight::eight_a(buf)),
+            "8b" => {
+                eight::eight_b(buf);
+                println!("\n[see above]")
+            }
             _ => println!("argument unrecognized: {}", args[1]),
         }
     }

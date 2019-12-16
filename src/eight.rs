@@ -1,6 +1,10 @@
 use std::io::{BufRead, Read};
 
-pub fn image_check<I>(mut buf: I, width: usize, height: usize) -> usize
+fn count_byte(v: &Vec<u8>, b: u8) -> usize {
+    v.iter().filter(|&x| *x == b).count()
+}
+
+fn image_check<I>(mut buf: I, width: usize, height: usize) -> usize
 where
     I: Read,
 {
@@ -16,15 +20,15 @@ where
             },
         }
 
-        let zero_count = layer.iter().filter(|&n| *n == '0' as u8).count();
+        let zero_count = count_byte(&layer, '0' as u8);
         if zero_count < best_zeros {
             best_layer = layer.clone();
             best_zeros = zero_count;
         }
     }
 
-    let one_count = best_layer.iter().filter(|&n| *n == '1' as u8 ).count();
-    let two_count = best_layer.iter().filter(|&n| *n == '2' as u8 ).count();
+    let one_count = count_byte(&best_layer, '1' as u8);
+    let two_count = count_byte(&best_layer, '2' as u8);
     one_count * two_count
 }
 

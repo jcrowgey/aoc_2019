@@ -1,9 +1,7 @@
-#[path = "intcode.rs"]
-mod intcode;
-
 use std::io::BufRead;
 use std::thread;
-use intcode::IntcodeMachine;
+use crate::intcode;
+use crate::intcode::IntcodeMachine;
 
 pub fn five_a<I>(buf: I) -> i64
 where

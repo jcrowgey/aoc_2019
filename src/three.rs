@@ -1,38 +1,7 @@
 use std::io::BufRead;
-use std::cmp::Ordering;
 use std::collections::{HashSet,HashMap};
+use crate::point::Point;
 
-#[derive(Debug,Hash,Clone)]
-struct Point {
-    x: i32,
-    y: i32,
-}
-
-impl Point {
-    fn dist(&self) -> i32 {
-        self.x.abs() + self.y.abs()
-    }
-}
-
-impl PartialEq for Point {
-    fn eq(&self, other: &Self) -> bool {
-        self.x == other.x && self.y == other.y
-    }
-}
-
-impl Eq for Point {}
-
-impl Ord for Point {
-    fn cmp(&self, other: &Self) -> Ordering {
-        (self.dist()).cmp(&(other.dist()))
-    }
-}
-
-impl PartialOrd for Point {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
 
 fn up(p: &Point) -> Point {
     Point{

@@ -1,9 +1,7 @@
-#[path = "intcode.rs"]
-mod intcode;
-
 use std::io::BufRead;
 use std::thread;
-use intcode::IntcodeMachine;
+use crate::intcode;
+use crate::intcode::IntcodeMachine;
 
 fn amp_chain_feedback(
     program: Vec<i64>,

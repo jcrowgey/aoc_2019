@@ -1,9 +1,7 @@
-#[path = "intcode.rs"]
-mod intcode;
-
 use std::io::BufRead;
 use std::thread;
-use intcode::IntcodeMachine;
+use crate::intcode::IntcodeMachine;
+use crate::intcode;
 
 
 pub fn nine_a<I>(buf: I) -> i64

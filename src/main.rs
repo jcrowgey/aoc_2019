@@ -1,6 +1,9 @@
 use std::env::args;
 use std::io;
 
+mod intcode;
+mod point;
+
 mod one;
 mod two;
 mod three;

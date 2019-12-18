@@ -5,7 +5,7 @@ use std::io::BufRead;
 use intcode::IntcodeMachine;
 
 
-pub fn two_a<I>(buf: I) -> i32
+pub fn two_a<I>(buf: I) -> i64
 where
     I: BufRead,
 {
@@ -18,17 +18,17 @@ where
     mach.run_program()
 }
 
-pub fn two_b<I>(buf: I) -> i32
+pub fn two_b<I>(buf: I) -> i64
 where
     I: BufRead,
 {
 
     let p = intcode::read_program(buf);
-    let mut noun: i32 = 0;
-    let mut out: i32;
-    let needle: i32 = 19690720;
+    let mut noun: i64 = 0;
+    let mut out: i64;
+    let needle: i64 = 19690720;
     while noun < 100 {
-        let mut verb: i32 = 0;
+        let mut verb: i64 = 0;
         while verb < 100 {
             let mut q = p.to_owned();
             q[1] = noun;

@@ -6,9 +6,9 @@ use std::thread;
 use intcode::IntcodeMachine;
 
 fn amp_chain_feedback(
-    program: Vec<i32>,
-    phases: Vec<i32>,
-) -> i32 {
+    program: Vec<i64>,
+    phases: Vec<i64>,
+) -> i64 {
 
     let (a_in, a_out, mut amp_a) = IntcodeMachine::new(program.to_owned());
     let (b_in, b_out, mut amp_b) = IntcodeMachine::new(program.to_owned());
@@ -64,7 +64,7 @@ fn amp_chain_feedback(
         amp_e.run_program();
     });
     let final_out = thread::spawn(move || {
-        let mut result: i32 = -1;
+        let mut result: i64 = -1;
         for i in e_out {
             match a_in.send(i) {
                 Ok(_) => {
@@ -82,8 +82,8 @@ fn amp_chain_feedback(
     final_out.join().unwrap()
 }
 
-fn heaps(n: usize, a: &mut Vec<i32>) -> Vec<Vec<i32>> {
-    let mut ret: Vec<Vec<i32>> = Vec::new();
+fn heaps(n: usize, a: &mut Vec<i64>) -> Vec<Vec<i64>> {
+    let mut ret: Vec<Vec<i64>> = Vec::new();
     if n == 1 {
         ret.push(a.to_vec());
         return ret
@@ -102,7 +102,7 @@ fn heaps(n: usize, a: &mut Vec<i32>) -> Vec<Vec<i32>> {
     ret
 }
 
-pub fn seven_a<I>(buf: I) -> i32
+pub fn seven_a<I>(buf: I) -> i64
 where
     I: BufRead,
 {
@@ -119,7 +119,7 @@ where
     max
 }
 
-pub fn seven_b<I>(buf: I) -> i32
+pub fn seven_b<I>(buf: I) -> i64
 where
     I: BufRead,
 {

@@ -5,7 +5,7 @@ use std::io::BufRead;
 use std::thread;
 use intcode::IntcodeMachine;
 
-pub fn five_a<I>(buf: I) -> i32
+pub fn five_a<I>(buf: I) -> i64
 where
     I: BufRead,
 {
@@ -25,7 +25,7 @@ where
 }
 
 
-pub fn five_b<I>(buf: I) -> i32
+pub fn five_b<I>(buf: I) -> i64
 where
     I: BufRead,
 {

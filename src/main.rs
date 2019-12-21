@@ -43,6 +43,7 @@ fn main() {
             "9a" => println!("{}", nine::nine_a(buf)),
             "9b" => println!("{:?}", nine::nine_b(buf)),
             "10a" => println!("{}", ten::ten_a(buf)),
+            "10b" => println!("{}", ten::ten_b(buf)),
             _ => println!("argument unrecognized: {}", args[1]),
         }
     }

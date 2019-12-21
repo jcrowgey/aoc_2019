@@ -1,5 +1,6 @@
 use std::io::BufRead;
 use std::collections::{HashSet, HashMap};
+use std::cmp::Ordering::Less;
 use crate::point::Point;
 
 fn gcd(x: i32, y: i32) -> i32 {
@@ -65,79 +66,50 @@ impl PartialEq for Rational {
     }
 }
 
-fn ob(p: &Point, xdim: usize, ydim: usize) -> bool {
-    p.x > (xdim as i32) || p.y > (ydim as i32) || p.x < 0 || p.y < 0
-}
+impl Eq for Rational {}
 
-// Three points on a line, caller guarantees collinearity
-fn is_between(center: &Point, this: &Point, that: &Point) -> bool {
-    if (center.x - this.x).abs() < (that.x - this.x).abs() {
-        return true;
-    } else if (center.y - this.y).abs() < (that.y - this.y).abs() {
-        return true;
+
+fn next_point_on_line(slope: &Rational, base: &Point, locations: &HashSet<Point>,) -> Option<Point>
+{
+    let mut i = 1;
+    loop {
+        let relative_point = Point{
+            x: slope.num * i,
+            y: slope.den * i,
+        };
+        let real_point = Point{
+            x: relative_point.x + base.x,
+            y: (-1*relative_point.y) + base.y,
+        };
+        if locations.contains(&real_point) {
+            return Some(real_point);
+        }
+        i += 1;
     }
-    return false;
+
 }
 
-fn can_see(p: &Point, q: &Point, locations: &HashSet<Point>, xdim: usize, ydim: usize) -> bool {
-    // check_point is from the standpoint of p
-    // so that slope is just the reduction of q
+fn can_see(p: &Point, q: &Point, locations: &HashSet<Point>) -> bool {
     let mut slope = Rational{
         num: q.x - p.x,
-        den: q.y - p.y,
+        den: -1 * (q.y - p.y),
     };
 
     slope.reduce().unwrap();
 
-    // now, while our coords are within the graph, keep moving outward
-    let mut check_point = Point{ x: slope.num, y: slope.den};
-    let mut i = 1;
-    loop {
-        // but use the real location for the checks
-        let real_point = Point{x: check_point.x + p.x, y: check_point.y + p.y};
-
-        if ob(&real_point, xdim, ydim) {
-            return false
-        }
-
-        if locations.contains(&real_point) {
-            if check_point == *q {
-                return true
+    match next_point_on_line(&slope, &p, &locations) {
+        Some(next_point) => {
+            if next_point == *q {
+                return true;
             }
-
-            if is_between(&real_point, &p, &q) {
-                return false
-            } else {
-                return true
-            }
-        }
-
-        i += 1;
-        check_point = Point{ x: slope.num * i, y: slope.den * i };
+            return false;
+        },
+        _ => return false,
     }
 }
 
-pub fn ten_a<I>(buf: I) -> usize
-where
-    I: BufRead,
+fn get_viz_counts(locations: &HashSet<Point>) -> HashMap::<&Point, usize>
 {
-    let mut locations = HashSet::new();
-    let mut xdim = 0;
-    let mut ydim = 0;
-
-    for (y, line) in buf.lines().enumerate() {
-        ydim += 1;
-        let line = line.unwrap();
-        for (x, ch) in line.chars().enumerate() {
-            if y == 0 {
-                xdim += 1;
-            }
-            if ch == '#' {
-                locations.insert(Point{x: x as i32, y: y as i32});
-            }
-        }
-    }
-
     let mut relations = HashMap::<(&Point,&Point),bool>::new();
     let mut viz_counts = HashMap::<&Point,usize>::new();
     for p in locations.iter() {
@@ -148,7 +120,7 @@ where
             if relations.contains_key(&(q, p)) {
                 continue;
             }
-            let v = can_see(p, q, &locations, xdim, ydim);
+            let v = can_see(p, q, &locations);
             relations.insert((p, q), v);
             relations.insert((q, p), v);
             if v {
@@ -165,11 +137,118 @@ where
             }
         }
     }
+    viz_counts
+}
 
+fn read_input<I>(buf: I) -> HashSet<Point>
+where
+    I: BufRead,
+{
+    let mut locations = HashSet::new();
+
+    for (y, line) in buf.lines().enumerate() {
+        let line = line.unwrap();
+        for (x, ch) in line.chars().enumerate() {
+            if ch == '#' {
+                locations.insert(Point{x: x as i32, y: y as i32});
+            }
+        }
+    }
+    locations
+}
+
+fn get_slopes(base: &Point, locations: &HashSet<Point>) -> Vec<Rational>
+{
+
+    let mut quadrants: Vec<HashSet<Rational>> = Vec::new();
+    for _ in 0..4 {
+        quadrants.push(HashSet::<Rational>::new());
+    }
+
+    for loc in locations.iter() {
+        let mut rel = Rational{num: loc.x-base.x, den: -1 * (loc.y - base.y)};
+        if rel.num ==  0 && rel.den == 0 {
+            continue;
+        }
+        rel.reduce().unwrap();
+
+        if rel.num >= 0 && rel.den > 0 {
+            quadrants[0].insert(rel);
+        } else if rel.num >= 0 {
+            quadrants[1].insert(rel);
+        } else if rel.den <= 0 {
+            quadrants[2].insert(rel);
+        } else {
+            quadrants[3].insert(rel);
+        }
+    }
+
+    // these sorted slopes are funny biz
+    let slope_sort = |a: &Rational, b: &Rational| {
+        (a.num as f64/a.den as f64)
+            .partial_cmp(&(b.num as f64/b.den as f64))
+            .unwrap_or(Less)
+    };
+    let mut sorted_slopes: Vec<Rational> = Vec::new();
+
+    for q in quadrants {
+        let mut sorted_q: Vec<_> = q.iter().cloned().collect();
+        sorted_q.sort_by(slope_sort);
+        sorted_slopes.append(&mut sorted_q);
+    }
+
+    sorted_slopes
+}
+
+fn get_destroy_order(
+    mut locations: HashSet<Point>,
+    base_location: &Point,
+    stop: usize,
+) -> Vec<Point> {
+
+    let mut res = Vec::new();
+    let slopes = get_slopes(base_location, &locations);
+    let mut i = 0;
+    while res.len() < stop {
+        let slope_idx = i % slopes.len();
+        let laser_slope: &Rational = &slopes[slope_idx];
+        if let Some(p) = next_point_on_line(&laser_slope, &base_location, &locations) {
+            locations.remove(&p);
+            res.push(p);
+        }
+
+        i += 1;
+    }
+    res
+}
+
+pub fn ten_a<I>(buf: I) -> usize
+where
+    I: BufRead,
+{
+
+    let locations = read_input(buf);
+    let viz_counts = get_viz_counts(&locations);
     let mut count_vec: Vec<usize> = viz_counts.values().cloned().collect();
     count_vec.sort_unstable();
     count_vec[count_vec.len() - 1]
 }
+
+pub fn ten_b<I>(buf: I) -> usize
+where
+    I: BufRead,
+{
+    let locations = read_input(buf);
+    let viz_counts = get_viz_counts(&locations);
+    let mut by_count: Vec<_> = viz_counts.iter().collect();
+    by_count.sort_by(|a, b| a.1.cmp(b.1).reverse());
+    let base_location = by_count[0].0.clone();
+    drop(viz_counts);
+
+    let destroy_order = get_destroy_order(locations.to_owned(), &base_location, 200);
+    destroy_order[199].x as usize * 100 + (destroy_order[199].y) as usize
+}
+
 
 
 #[cfg(test)]
@@ -208,6 +287,31 @@ mod tests {
     }
 
     #[test]
+    fn test_ten_b() {
+        let input = b".#..##.###...#######
+##.############..##.
+.#.######.########.#
+.###.#######.####.#.
+#####.##.#.##.###.##
+..#####..#.#########
+####################
+#.####....###.#.#.##
+##.#################
+#####.##.###..####..
+..######..##.#######
+####.##.####...##..#
+.#####..#.######.###
+##...#.##########...
+#.##########.#######
+.####.#.###.###.#.##
+....##.##.###..#####
+.#.#.###########.###
+#.#.#.#####.####.###
+###.##.####.##.#..##";
+        assert_eq!(ten_b(&input[..]), 802);
+    }
+
+    #[test]
     fn test_reduce_rational() {
         let mut rat = Rational{num: 2, den: 4};
         rat.reduce().expect("failed to reduce rational");
@@ -228,38 +332,5 @@ mod tests {
         rat.reduce().expect("failed to reduce rational");
         assert_eq!(rat.num, -1);
         assert_eq!(rat.den, 5);
-    }
-
-    #[test]
-    fn test_is_between() {
-        let a = Point{x:0,y:0};
-        let b = Point{x:1,y:0};
-        let c = Point{x:2,y:0};
-        let res = is_between(&a, &b, &c);
-        assert!(!res);
-        let res = is_between(&c, &a, &b);
-        assert!(!res);
-        let res = is_between(&b, &a, &c);
-        assert!(res);
-
-        let a = Point{x:0,y:1};
-        let b = Point{x:0,y:2};
-        let c = Point{x:0,y:3};
-        let res = is_between(&a, &b, &c);
-        assert!(!res);
-        let res = is_between(&c, &a, &b);
-        assert!(!res);
-        let res = is_between(&b, &a, &c);
-        assert!(res);
-
-        let a = Point{x:0,y:0};
-        let b = Point{x:1,y:1};
-        let c = Point{x:2,y:2};
-        let res = is_between(&a, &b, &c);
-        assert!(!res);
-        let res = is_between(&c, &a, &b);
-        assert!(!res);
-        let res = is_between(&b, &a, &c);
-        assert!(res);
     }
 }

@@ -3,34 +3,6 @@ use std::collections::{HashSet,HashMap};
 use crate::point::Point;
 
 
-fn up(p: &Point) -> Point {
-    Point{
-        x: p.x,
-        y: p.y + 1,
-    }
-}
-
-fn down(p: &Point) -> Point {
-    Point{
-        x: p.x,
-        y: p.y - 1,
-    }
-}
-
-fn left(p: &Point) -> Point {
-    Point{
-        x: p.x - 1,
-        y: p.y,
-    }
-}
-
-fn right(p: &Point) -> Point {
-    Point{
-        x: p.x + 1,
-        y: p.y,
-    }
-}
-
 fn map_wire(wire: String) -> HashSet<Point> {
     let mut cur = Point{
         x: 0,
@@ -43,10 +15,10 @@ fn map_wire(wire: String) -> HashSet<Point> {
         let mut magnitude = magnitude.parse::<i32>().unwrap();
         let f: fn(&Point) -> Point;
         match direction {
-            "U" => f = up,
-            "D" => f = down,
-            "L" => f = left,
-            "R" => f = right,
+            "U" => f = Point::up,
+            "D" => f = Point::down,
+            "L" => f = Point::left,
+            "R" => f = Point::right,
             _ => panic!("bad input: {:?}", direction),
         }
         while magnitude > 0 {
@@ -71,10 +43,10 @@ fn map_wire_dist(wire: String) -> HashMap<Point, i32> {
         let mut magnitude = magnitude.parse::<i32>().unwrap();
         let f: fn(&Point) -> Point;
         match direction {
-            "U" => f = up,
-            "D" => f = down,
-            "L" => f = left,
-            "R" => f = right,
+            "U" => f = Point::up,
+            "D" => f = Point::down,
+            "L" => f = Point::left,
+            "R" => f = Point::right,
             _ => panic!("bad input: {:?}", direction),
         }
         while magnitude > 0 {

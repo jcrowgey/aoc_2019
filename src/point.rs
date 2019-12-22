@@ -10,6 +10,34 @@ impl Point {
     pub fn dist(&self) -> i32 {
         self.x.abs() + self.y.abs()
     }
+
+    pub fn up(&self) -> Self { // returns the point above
+        Point{
+            x: self.x,
+            y: self.y + 1,
+        }
+    }
+
+    pub fn down(&self) -> Self {
+        Point{
+            x: self.x,
+            y: self.y - 1,
+        }
+    }
+
+    pub fn left(&self) -> Self {
+        Point{
+            x: self.x - 1,
+            y: self.y,
+        }
+    }
+
+    pub fn right(&self) -> Self {
+        Point{
+            x: self.x + 1,
+            y: self.y,
+        }
+    }
 }
 
 impl PartialEq for Point {

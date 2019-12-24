@@ -15,6 +15,7 @@ mod eight;
 mod nine;
 mod ten;
 mod eleven;
+mod twelve;
 
 fn main() {
     let args: Vec<_> = args().collect();
@@ -47,6 +48,8 @@ fn main() {
             "10b" => println!("{}", ten::ten_b(buf)),
             "11a" => println!("{}", eleven::eleven_a(buf)),
             "11b" => println!("{}", eleven::eleven_b(buf)),
+            "12a" => println!("{}", twelve::twelve_a(buf)),
+            "12b" => println!("{}", twelve::twelve_b(buf)),
             _ => println!("argument unrecognized: {}", args[1]),
         }
     }

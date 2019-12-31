@@ -1,6 +1,5 @@
 use std::io::BufRead;
-use std::collections::{HashSet,HashMap};
-use std::iter::FromIterator;
+use std::collections::HashMap;
 
 #[derive(Debug,Hash,Clone,Copy,PartialEq,Eq)]
 struct Body {
@@ -199,6 +198,9 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    use std::collections::HashSet;
+    use std::iter::FromIterator;
     use super::*;
 
     #[test]

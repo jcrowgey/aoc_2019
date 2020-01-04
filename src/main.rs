@@ -56,6 +56,7 @@ fn main() {
             "13b" => println!("{}", thirteen::thirteen_b(buf)),
             "13p" => thirteen::play_interactive(buf),
             "14a" => println!("{}", fourteen::fourteen_a(buf)),
+            "14b" => println!("{}", fourteen::fourteen_b(buf)),
             _ => println!("argument unrecognized: {}", args[1]),
         }
     }

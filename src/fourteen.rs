@@ -90,9 +90,13 @@ fn ord(rules: &HashMap<String,Rule>) -> Vec<HashSet<String>> {
 }
 
 // shove numbers into the deps and return ore
-fn ore(rules: HashMap<String,Rule>, deps: Vec<HashSet<String>>) -> usize {
-    let mut counted_deps = rules.get("FUEL").unwrap().lhs.to_owned();  // seed with UFUEL reqs
-    for tier in deps.iter() {
+fn counted_deps(rules: &HashMap<String,Rule>, deps: &Vec<HashSet<String>>, fuel_amt: usize) -> HashMap<String,usize> {
+    let mut counted_deps = HashMap::new(); // rules.get("FUEL").unwrap().lhs.to_owned();  // seed with FUEL reqs
+    for (mat, amt) in &rules.get("FUEL").unwrap().lhs.to_owned() {
+        counted_deps.insert(mat.to_string(), amt * fuel_amt);
+    }
+
+    for tier in deps {
         for material in tier {
             let req_amt = *counted_deps.get(material).unwrap();
             let mat_rule = rules.get(material).unwrap();
@@ -107,8 +111,50 @@ fn ore(rules: HashMap<String,Rule>, deps: Vec<HashSet<String>>) -> usize {
             }
         }
     }
-    *counted_deps.get("ORE").unwrap()
+    counted_deps
 }
+
+/*
+fn purchase(material: &String, amt: usize, rule: &Rule, bank: &mut HashMap<String, usize>) {
+    // pay the piper!
+    let mut purchased = 0;
+    while purchased < amt {
+        for (req_mat, to_pay) in &rule.lhs {
+            let banked_amt = bank.get_mut(&req_mat.to_string()).unwrap();
+            *banked_amt -= to_pay;
+        }
+        purchased += rule.amt;
+    }
+
+    if bank.contains_key(material) {
+        *bank.get_mut(material).unwrap() += purchased;
+    } else {
+        bank.insert(material.to_string(), purchased);
+    }
+}
+
+fn make_one_fuel(
+    rules: &HashMap<String,Rule>,
+    deps: &Vec<HashSet<String>>,
+    counted: &HashMap<String,usize>,
+    mut bank: &mut HashMap::<String,usize>,
+) {
+
+    for tier in deps.iter().rev() {
+        for material in tier {
+            let mat_rule = rules.get(material).unwrap();
+            let have = *bank.get(material).unwrap_or(&0);
+            let req_amt = *counted.get(material).unwrap();
+            if have < req_amt {
+                let need = req_amt - have;
+                purchase(material, need, &mat_rule, &mut bank);
+            }
+        }
+    }
+    let fuel_rule = rules.get("FUEL").unwrap();
+    purchase(&"FUEL".to_string(), 1, &fuel_rule, &mut bank);
+}
+*/
 
 pub fn fourteen_a<I>(buf: I) -> usize
 where
@@ -116,7 +162,34 @@ where
 {
     let rules = read_rules(buf);
     let deps = ord(&rules);
-    ore(rules, deps)
+    *counted_deps(&rules, &deps, 1).get("ORE").unwrap()
+}
+
+pub fn fourteen_b<I>(buf: I) -> usize
+where
+    I: BufRead,
+{
+    let rules = read_rules(buf);
+    let deps = ord(&rules);
+    let cost_for_one = *counted_deps(&rules, &deps, 1).get("ORE").unwrap();
+    let ore_supply: usize = 1000000000000;
+
+    // start with counted(1).ORE / supply
+    let mut guess = ore_supply / cost_for_one;
+    let mut guess_counted = counted_deps(&rules, &deps, guess);
+    let mut ore_cost = *guess_counted.get("ORE").unwrap();
+    loop {
+        let remainder = ore_supply - ore_cost;
+        let guess_incr = remainder / cost_for_one;
+        guess += guess_incr;
+        guess_counted = counted_deps(&rules, &deps, guess);
+        let next_cost = *guess_counted.get("ORE").unwrap();
+        if next_cost == ore_cost {
+            break;
+        }
+        ore_cost = next_cost;
+    }
+    guess
 }
 
 #[cfg(test)]
@@ -144,7 +217,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fourteen_a_big1() {
+    fn test_fourteen_big1() {
         let input = b"157 ORE => 5 NZVS
 165 ORE => 6 DCFZ
 44 XJWVT, 5 KHKGT, 1 QDVJ, 29 NZVS, 9 GPVTF, 48 HKGWZ => 1 FUEL
@@ -155,6 +228,7 @@ mod tests {
 165 ORE => 2 GPVTF
 3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT";
         assert_eq!(fourteen_a(&input[..]), 13312);
+        assert_eq!(fourteen_b(&input[..]), 82892753);
     }
 
     #[test]
@@ -168,7 +242,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fourteen_a_big2() {
+    fn test_fourteen_big2() {
         let input = b"2 VPVL, 7 FWMGM, 2 CXFTF, 11 MNCFX => 1 STKFG
 17 NVRVD, 3 JNWZP => 8 VPVL
 53 STKFG, 6 MNCFX, 46 VJHF, 81 HVMC, 68 CXFTF, 25 GNMV => 1 FUEL
@@ -182,10 +256,11 @@ mod tests {
 1 VJHF, 6 MNCFX => 4 RFSQX
 176 ORE => 6 VJHF";
         assert_eq!(fourteen_a(&input[..]), 180697);
+        assert_eq!(fourteen_b(&input[..]), 5586022);
     }
 
     #[test]
-    fn test_fourteen_a_big3() {
+    fn test_fourteen_big3() {
         let input = b"171 ORE => 8 CNZTR
 7 ZLQW, 3 BMBT, 9 XCVML, 26 XMNCP, 1 WPTQ, 2 MZWV, 1 RJRHP => 4 PLWSL
 114 ORE => 4 BHXH
@@ -204,5 +279,6 @@ mod tests {
 7 XCVML => 6 RJRHP
 5 BHXH, 4 VRPVC => 5 LTCX";
         assert_eq!(fourteen_a(&input[..]), 2210736);
+        assert_eq!(fourteen_b(&input[..]), 460664);
     }
 }

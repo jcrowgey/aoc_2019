@@ -90,8 +90,14 @@ fn ord(rules: &HashMap<String,Rule>) -> Vec<HashSet<String>> {
 }
 
 // shove numbers into the deps and return ore
-fn counted_deps(rules: &HashMap<String,Rule>, deps: &Vec<HashSet<String>>, fuel_amt: usize) -> HashMap<String,usize> {
-    let mut counted_deps = HashMap::new(); // rules.get("FUEL").unwrap().lhs.to_owned();  // seed with FUEL reqs
+fn counted_deps(
+    rules: &HashMap<String,Rule>,
+    deps: &Vec<HashSet<String>>,
+    fuel_amt: usize,
+)
+    -> HashMap<String,usize>
+{
+    let mut counted_deps = HashMap::new();
     for (mat, amt) in &rules.get("FUEL").unwrap().lhs.to_owned() {
         counted_deps.insert(mat.to_string(), amt * fuel_amt);
     }
@@ -113,48 +119,6 @@ fn counted_deps(rules: &HashMap<String,Rule>, deps: &Vec<HashSet<String>>, fuel_
     }
     counted_deps
 }
-
-/*
-fn purchase(material: &String, amt: usize, rule: &Rule, bank: &mut HashMap<String, usize>) {
-    // pay the piper!
-    let mut purchased = 0;
-    while purchased < amt {
-        for (req_mat, to_pay) in &rule.lhs {
-            let banked_amt = bank.get_mut(&req_mat.to_string()).unwrap();
-            *banked_amt -= to_pay;
-        }
-        purchased += rule.amt;
-    }
-
-    if bank.contains_key(material) {
-        *bank.get_mut(material).unwrap() += purchased;
-    } else {
-        bank.insert(material.to_string(), purchased);
-    }
-}
-
-fn make_one_fuel(
-    rules: &HashMap<String,Rule>,
-    deps: &Vec<HashSet<String>>,
-    counted: &HashMap<String,usize>,
-    mut bank: &mut HashMap::<String,usize>,
-) {
-
-    for tier in deps.iter().rev() {
-        for material in tier {
-            let mat_rule = rules.get(material).unwrap();
-            let have = *bank.get(material).unwrap_or(&0);
-            let req_amt = *counted.get(material).unwrap();
-            if have < req_amt {
-                let need = req_amt - have;
-                purchase(material, need, &mat_rule, &mut bank);
-            }
-        }
-    }
-    let fuel_rule = rules.get("FUEL").unwrap();
-    purchase(&"FUEL".to_string(), 1, &fuel_rule, &mut bank);
-}
-*/
 
 pub fn fourteen_a<I>(buf: I) -> usize
 where

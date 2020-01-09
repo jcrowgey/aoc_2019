@@ -18,6 +18,7 @@ mod eleven;
 mod twelve;
 mod thirteen;
 mod fourteen;
+mod fifteen;
 
 fn main() {
     let args: Vec<_> = args().collect();
@@ -57,6 +58,8 @@ fn main() {
             "13p" => thirteen::play_interactive(buf),
             "14a" => println!("{}", fourteen::fourteen_a(buf)),
             "14b" => println!("{}", fourteen::fourteen_b(buf)),
+            "15a" => println!("{}", fifteen::fifteen_a(buf)),
+            "15b" => println!("{}", fifteen::fifteen_b(buf)),
             _ => println!("argument unrecognized: {}", args[1]),
         }
     }
